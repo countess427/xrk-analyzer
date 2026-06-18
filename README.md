@@ -1,5 +1,7 @@
 # XRK Analyzer
 
+[![Live Demo](https://img.shields.io/badge/live%20demo-NJMP%20Thunderbolt-blue)](https://countess427.github.io/xrk-analyzer/demo/NJMP_telemetry_demo.html)
+
 **A 100% local, in-browser telemetry analyzer for AiM `.xrk` data logs.** Drop in your files, get lap stats, an interactive lap player, a track-speed heatmap, turn-by-turn coaching, and "where's my lap time" opportunities — no RaceStudio, no install, no upload. Everything runs in your browser; your data never leaves your machine.
 
 ![Track speed heatmap](demo/images/track_speed_heatmap.png)
@@ -27,9 +29,9 @@ The coaching layer is inspired by **Garmin Catalyst**: instead of just showing y
 
 ## Quick start
 
-**Just want to see it?** Open [`demo/NJMP_telemetry_demo.html`](demo/NJMP_telemetry_demo.html) — a pre-baked build with a real race's data embedded (a 7-hour, 4-driver day at NJMP Thunderbolt). No files needed.
+**Just want to see it?** Open the [live demo](https://countess427.github.io/xrk-analyzer/demo/NJMP_telemetry_demo.html) — a pre-baked build with a real race's data embedded (a 7-hour, 4-driver day at NJMP Thunderbolt). No files needed. (Or open [`demo/NJMP_telemetry_demo.html`](demo/NJMP_telemetry_demo.html) locally.)
 
-**Analyze your own data?** Open [`index.html`](index.html) (same as `AiM_XRK_Analyzer.html`) and drag your `.xrk` files onto it. To test with the included data, drop everything in [`sample-data/`](sample-data/).
+**Analyze your own data?** Open the [analyzer](https://countess427.github.io/xrk-analyzer/) (same as `AiM_XRK_Analyzer.html`) and drag your `.xrk` files onto it. To test with the included data, drop everything in [`sample-data/`](sample-data/). Works offline too — just open [`index.html`](index.html) directly from disk.
 
 That's it — both are single, self-contained HTML files. They work straight from disk (`file://`), offline, no server, no build step.
 
