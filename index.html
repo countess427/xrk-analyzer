@@ -3,553 +3,375 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>AiM XRK Analyzer — local</title>
+<title>XRK Analyzer — AiM telemetry in your browser</title>
 <style>
-:root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2230;--txt:#e6edf3;--mut:#8b949e;--acc:#58a6ff;--brake:#ff6b6b;--apexc:#ffd23f;--thr:#6bcb77;}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-h1{font-size:18px;margin:0}h2{font-size:15px;margin:0 0 8px;color:var(--acc)}
-.wrap{max-width:1280px;margin:0 auto;padding:14px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid #283042;padding-bottom:10px;margin-bottom:12px}
-.kpis{display:flex;gap:18px;flex-wrap:wrap}
-.kpi{font-size:12px;color:var(--mut)}.kpi b{display:block;font-size:17px;color:var(--txt);font-variant-numeric:tabular-nums}
-.panel{background:var(--panel);border:1px solid #283042;border-radius:10px;padding:14px;margin-bottom:14px}
-.player{display:grid;grid-template-columns:minmax(360px,1fr) minmax(380px,1fr);gap:16px}
-@media(max-width:880px){.player{grid-template-columns:1fr}}
-canvas{display:block;width:100%;background:var(--panel2);border-radius:8px}
-#map{cursor:pointer}
-.ctrls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0}
-button{background:#21262d;color:var(--txt);border:1px solid #30363d;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:13px}
-button:hover{border-color:var(--acc)}button.on{background:var(--acc);color:#04111f;border-color:var(--acc);font-weight:600}
-select,input[type=text]{background:#21262d;color:var(--txt);border:1px solid #30363d;border-radius:7px;padding:6px;font-size:13px}
-.presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.presets .p{font-size:12px;padding:5px 9px}
-.readout{display:flex;gap:16px;font-variant-numeric:tabular-nums;margin:6px 0 2px}
-.readout div{font-size:12px;color:var(--mut)}.readout b{font-size:18px;color:var(--txt)}
-input[type=range]{width:100%}
-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
-th,td{padding:6px 8px;text-align:right;border-bottom:1px solid #232b38}th{color:var(--mut);font-weight:600}
-td.l,th.l{text-align:left}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
-.muted{color:var(--mut);font-size:12px}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;align-items:center}
-.swatch{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:middle}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:880px){.grid2{grid-template-columns:1fr}}
-.bar{height:14px;border-radius:3px;background:#30363d;position:relative;overflow:hidden}.bar>span{position:absolute;left:0;top:0;bottom:0;border-radius:3px}
-.tag{font-size:10px;padding:1px 6px;border-radius:10px;background:#30363d;color:var(--mut);margin-left:6px}
-.cap{font-size:11px;color:var(--mut);margin-top:4px}
-.tdgrid{display:grid;grid-template-columns:minmax(320px,0.95fr) minmax(360px,1.05fr);gap:16px}@media(max-width:880px){.tdgrid{grid-template-columns:1fr}}
-.tip{border-left:3px solid #444;padding:6px 10px;margin:6px 0;background:#10151d;border-radius:0 6px 6px 0;font-size:13px}
-.tip.brake{border-color:var(--brake)}.tip.apex{border-color:var(--apexc)}.tip.throttle{border-color:var(--thr)}.tip.ok{border-color:#3a4452;color:var(--mut)}
-.lossrow{display:flex;align-items:center;gap:8px;font-size:12px;margin:3px 0;cursor:pointer;padding:3px 5px;border-radius:5px}
-.lossrow:hover{background:#1c2230}.lossrow.sel{background:#222c3a;outline:1px solid #2f3a4a}.lossrow .lb{width:28px;color:var(--mut)}
-.mk{display:inline-block;width:10px;height:10px;margin-right:4px;vertical-align:middle}
-.opp{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:8px;background:#10151d;margin:6px 0}
-.opp .rank{font-size:18px;font-weight:700;color:#fff;min-width:26px;text-align:center}.opp .sec{font-weight:700;font-variant-numeric:tabular-nums}
-.chip{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;margin-left:6px;color:#04111f;font-weight:600}
-details{margin-top:6px}summary{cursor:pointer;color:var(--acc);font-size:13px;margin:6px 0}
-.turnblock{border:1px solid #232b38;border-radius:8px;padding:8px 10px;margin:6px 0}
-#drop{border:2px dashed #30404f;border-radius:14px;padding:54px 20px;text-align:center;background:#10151d;transition:.15s;cursor:pointer}
-#drop.over{border-color:var(--acc);background:#13202f}
-#drop h1{font-size:22px;margin-bottom:6px}
-.sesrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;padding:6px 0;border-bottom:1px solid #1f2733}
-.sesrow .fn{font-family:ui-monospace,monospace;color:#cdd6e0;min-width:150px}
-.pill{font-size:11px;color:var(--mut)}
-#status{font-size:13px;color:var(--acc);margin-top:10px;min-height:18px}
-.linkish{color:var(--acc);cursor:pointer;text-decoration:underline}
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --border: #21262d;
+  --txt: #e6edf3;
+  --mut: #8b949e;
+  --acc: #58a6ff;
+  --brake: #ff6b6b;
+  --apex: #ffd23f;
+  --thr: #6bcb77;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font: 16px/1.6 -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+/* NAV */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 40px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: rgba(13,17,23,0.92);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+}
+.logo { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+.logo span { color: var(--acc); }
+.nav-links { display: flex; gap: 12px; }
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.btn:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--txt);
+}
+.btn-primary {
+  background: var(--acc);
+  color: #04111f;
+  border: none;
+}
+.btn-demo {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: var(--txt);
+}
+.btn-lg { padding: 14px 28px; font-size: 16px; border-radius: 10px; }
+
+/* HERO */
+.hero {
+  text-align: center;
+  padding: 80px 24px 60px;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: rgba(88,166,255,0.12);
+  color: var(--acc);
+  border: 1px solid rgba(88,166,255,0.25);
+  margin-bottom: 22px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+h1 {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  margin-bottom: 20px;
+}
+h1 em { color: var(--acc); font-style: normal; }
+.hero-sub {
+  font-size: 18px;
+  color: var(--mut);
+  max-width: 560px;
+  margin: 0 auto 36px;
+  line-height: 1.6;
+}
+.hero-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* FEATURES */
+.section { padding: 60px 24px; max-width: 1100px; margin: 0 auto; }
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: 10px;
+}
+.section-title {
+  font-size: clamp(22px, 3vw, 32px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 40px;
+}
+
+/* SCREENSHOTS */
+.screenshots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 60px;
+}
+@media (max-width: 640px) { .screenshots { grid-template-columns: 1fr; } }
+.screenshot-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.screenshot-card img { width: 100%; display: block; }
+.screenshot-card .cap {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--mut);
+  border-top: 1px solid var(--border);
+}
+.screenshot-card .cap strong { color: var(--txt); display: block; margin-bottom: 2px; }
+
+/* FEATURE GRID */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.feat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+}
+.feat-icon { font-size: 22px; margin-bottom: 12px; }
+.feat h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.feat p { font-size: 13px; color: var(--mut); line-height: 1.55; }
+
+/* HOW IT WORKS */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.how-step {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+}
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(88,166,255,0.15);
+  color: var(--acc);
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+.how-step h3 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.how-step p { font-size: 13px; color: var(--mut); }
+
+/* PRIVACY BANNER */
+.privacy {
+  background: rgba(88,166,255,0.06);
+  border: 1px solid rgba(88,166,255,0.18);
+  border-radius: 12px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1052px;
+  margin: 0 auto 60px;
+}
+.privacy-icon { font-size: 28px; flex-shrink: 0; }
+.privacy h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.privacy p { font-size: 13px; color: var(--mut); }
+
+/* CTA SECTION */
+.cta-section {
+  text-align: center;
+  padding: 60px 24px 80px;
+  border-top: 1px solid var(--border);
+}
+.cta-section h2 { font-size: clamp(22px, 3vw, 32px); font-weight: 700; margin-bottom: 12px; }
+.cta-section p { color: var(--mut); margin-bottom: 28px; font-size: 16px; }
+.cta-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 24px;
+  font-size: 13px;
+  color: var(--mut);
+  border-top: 1px solid var(--border);
+}
+footer a { color: var(--mut); text-decoration: none; }
+footer a:hover { color: var(--acc); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top">
-    <div><h1>AiM XRK Analyzer <span class="tag">100% local · files never leave your machine</span></h1>
-      <div class="muted" id="subtitle">Drop AiM .xrk / .xrz logs to analyse laps, stints, turns & coaching — no RaceStudio needed.</div></div>
-    <div class="kpis" id="kpis"></div>
-  </div>
 
-  <!-- DROP ZONE -->
-  <div class="panel" id="dropPanel">
-    <div id="drop">
-      <h1>⬇ Drop .xrk / .xrz files here</h1>
-      <div class="muted">or <span class="linkish" id="browse">browse</span> · multiple files = multiple stints · everything runs in your browser</div>
-      <input type="file" id="file" accept=".xrk,.xrz" multiple style="display:none"/>
-      <div id="status"></div>
+<nav>
+  <div class="logo">XRK <span>Analyzer</span></div>
+  <div class="nav-links">
+    <a href="demo/NJMP_telemetry_demo.html" class="btn btn-demo">▶ Live Demo</a>
+    <a href="AiM_XRK_Analyzer.html" class="btn btn-primary">Open Analyzer →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="badge">100% in-browser · no install · no upload</div>
+  <h1>AiM <em>.xrk</em> telemetry,<br>anywhere you have a browser</h1>
+  <p class="hero-sub">
+    Lap stats, an interactive lap player, track-speed heatmaps, turn-by-turn coaching,
+    and time-loss opportunities — without RaceStudio, without Windows, without uploading your data to anyone.
+  </p>
+  <div class="hero-ctas">
+    <a href="demo/NJMP_telemetry_demo.html" class="btn btn-demo btn-lg">▶ See a live demo</a>
+    <a href="AiM_XRK_Analyzer.html" class="btn btn-primary btn-lg">Open the analyzer →</a>
+  </div>
+</section>
+
+<div class="section">
+  <div class="section-label">Screenshots</div>
+  <div class="section-title">Everything you need, in one tab</div>
+
+  <div class="screenshots">
+    <div class="screenshot-card">
+      <img src="demo/images/track_speed_heatmap.png" alt="Track speed heatmap"/>
+      <div class="cap">
+        <strong>Track speed heatmap</strong>
+        Auto-detected, numbered turns. No track database needed.
+      </div>
     </div>
-  </div>
-
-  <!-- SESSIONS / DRIVERS -->
-  <div class="panel" id="sesPanel" style="display:none">
-    <h2>Sessions &amp; Drivers <span class="tag">give matching names to group a multi-stint driver</span></h2>
-    <div id="sessions"></div>
-    <div style="margin-top:8px"><button id="reload">＋ Add / replace files</button></div>
-  </div>
-
-  <div id="app" style="display:none">
-  <!-- LAP PLAYER -->
-  <div class="panel">
-    <h2>Composite Lap Player <span class="tag">click a turn number on the map to coach it ↓</span></h2>
-    <div class="presets" id="presets"></div>
-    <div class="ctrls">
-      <span class="muted">Lap:</span><select id="lapSel"></select>
-      <span class="muted">Compare vs:</span><select id="ghostSel"></select>
-      <button id="playBtn">▶ Play</button>
-      <button class="spd" data-s="1">1×</button><button class="spd on" data-s="2">2×</button><button class="spd" data-s="4">4×</button>
-    </div>
-    <div class="player">
-      <div><canvas id="map" width="560" height="460"></canvas>
-        <div class="legend" style="margin-top:8px"><span><span class="swatch" style="background:#ff5252"></span>slow</span><span><span class="swatch" style="background:#ffd23f"></span>mid</span><span><span class="swatch" style="background:#3ad29f"></span>fast</span><span class="muted">· numbers = turns (click) · ◯ = car</span></div></div>
-      <div>
-        <div class="readout"><div>SPEED<br><b id="rSpd">–</b> mph</div><div>BRAKE/ACCEL g<br><b id="rLong">–</b></div><div>LATERAL g<br><b id="rLat">–</b></div><div>LAP<br><b id="rT">–</b></div><div>Δ vs ref<br><b id="rDelta">–</b></div></div>
-        <input type="range" id="scrub" min="0" max="599" value="0"/>
-        <canvas id="speed" width="560" height="150"></canvas><div class="cap">Speed (mph) vs lap distance — solid = selected, faint = compare. Click chart to jump.</div>
-        <canvas id="delta" width="560" height="96"></canvas><div class="cap">Cumulative time gap vs compare — <span style="color:#ff6b6b">red = losing</span>, <span style="color:#3ad29f">green = gaining</span></div>
-        <canvas id="gg" width="560" height="150"></canvas><div class="cap">G-G: lateral (x) vs braking/accel (y). Rings 0.5/1.0 g.</div>
+    <div class="screenshot-card">
+      <img src="demo/images/turn1_coaching.png" alt="Turn coaching view"/>
+      <div class="cap">
+        <strong>Turn-by-turn coaching</strong>
+        Brake, apex, and throttle markers vs. the best lap in that corner.
       </div>
     </div>
   </div>
 
-  <!-- TURN DETAIL -->
-  <div class="panel" id="tdPanel">
-    <h2>Turn Detail — Coaching vs the Best Lap <span class="tag">Catalyst-style</span></h2>
-    <div class="ctrls"><button id="tdPrev">‹ Prev turn</button><select id="tdTurn"></select><button id="tdNext">Next turn ›</button><button id="tdPlay">▶ Loop turn</button><span class="muted" id="tdLapName" style="margin-left:auto"></span></div>
-    <div class="tdgrid">
-      <div><canvas id="tdMap" width="520" height="360"></canvas>
-        <div class="legend" style="margin-top:8px"><span><span class="mk" style="background:var(--brake);border-radius:50%"></span>brake</span><span><span class="mk" style="background:var(--apexc);transform:rotate(45deg)"></span>apex</span><span><span class="mk" style="background:var(--thr);clip-path:polygon(50% 0,100% 100%,0 100%)"></span>throttle</span><span class="muted">— solid=lap, dashed=best</span></div>
-        <div class="readout" style="margin-top:8px"><div>SPEED<br><b id="tdSpd">–</b> mph</div><div>BRAKE/ACCEL g<br><b id="tdG">–</b></div><div>vs best here<br><b id="tdDelta">–</b></div></div>
-        <div style="margin-top:10px"><div class="muted" id="lossHdr" style="margin-bottom:4px"></div><div id="lossList"></div></div>
-      </div>
-      <div><canvas id="tdSpeed" width="540" height="210"></canvas><div class="cap">Speed through the turn — solid = your lap, dashed = best here. Markers = brake/apex/throttle; moving line = playhead.</div><div id="tdTips" style="margin-top:10px"></div></div>
+  <div class="section-label">Features</div>
+  <div class="section-title">Designed for the whole paddock</div>
+  <div class="feat-grid">
+    <div class="feat">
+      <div class="feat-icon">🗂️</div>
+      <h3>Multi-file / multi-stint</h3>
+      <p>Drop a whole day of sessions. Label drivers. Give two files the same name to merge a multi-stint driver.</p>
     </div>
-  </div>
-
-  <!-- OPPORTUNITIES -->
-  <div class="panel"><h2>Opportunities <span class="tag">where the lap time is</span></h2>
-    <div class="muted" id="oppHdr" style="margin-bottom:8px"></div><div id="oppTop"></div>
-    <details><summary>Show full turn-by-turn suggestion list for this lap</summary><div id="oppAll"></div></details></div>
-
-  <div class="grid2">
-    <div class="panel"><h2>Per-Stint Lap-Time Statistics <span class="tag">green laps only</span></h2><table id="statTbl"></table><div class="cap">CV% = consistency (lower steadier). Cautions excluded (counted at right).</div></div>
-    <div class="panel"><h2>Theoretical Best vs Reality</h2><div id="theoBars"></div><div class="cap">Composite ideal = fastest sector from anyone, stitched together.</div></div>
-  </div>
-
-  <div class="panel"><h2>Turn-by-Turn — where each driver loses time</h2><div class="legend" style="margin-bottom:8px"><span class="muted">Cell = avg time in turn. Greener=near best; redder=more lost. ★=fastest.</span></div><table id="segTbl"></table></div>
-
-  <div class="panel"><div class="muted" id="footnote"></div></div>
+    <div class="feat">
+      <div class="feat-icon">🎬</div>
+      <h3>Lap player</h3>
+      <p>Animate any lap around the track with live speed and g-forces. Compare laps side-by-side, or scrub frame-by-frame.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔥</div>
+      <h3>Speed heatmap</h3>
+      <p>Full-circuit speed heatmap with auto-numbered corners, drawn straight from GPS position data.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🏁</div>
+      <h3>Catalyst-style coaching</h3>
+      <p>Each corner: your real line vs. the fastest through there. Plain-language suggestions — brake later, carry more apex speed, get to throttle sooner.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⏱️</div>
+      <h3>Where's my lap time?</h3>
+      <p>Time-loss opportunities ranked by seconds available. Per-turn breakdown of exactly where the gap is.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📊</div>
+      <h3>Stint statistics</h3>
+      <p>Best, mean, median, std-dev, CV%, P95/P99 per stint. Caution-lap filtering built in.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🧩</div>
+      <h3>Ideal lap</h3>
+      <p>Composite best lap = fastest sector from anyone, stitched together. Each driver's theoretical personal best, too.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⚡</div>
+      <h3>Fast parsing</h3>
+      <p>Dependency-free JavaScript parser. A 17 MB file parses in ~50 ms. No server, no build step, no waiting.</p>
+    </div>
   </div>
 </div>
 
-<script>// ===== XRK core: pure parse + analysis (no DOM). Usable in node and browser. =====
-(function(root){
-'use strict';
-const NG=600;
+<div style="padding: 0 24px;">
+  <div class="privacy">
+    <div class="privacy-icon">🔒</div>
+    <div>
+      <h3>Your data never leaves your machine</h3>
+      <p>The analyzer is a single self-contained HTML file. Everything — parsing, analysis, all visualizations — runs locally in your browser. There is no backend, no account, and no upload of any kind.</p>
+    </div>
+  </div>
+</div>
 
-// ---- byte helpers ----
-function findAll(buf,pat){const res=[],n=buf.length,m=pat.length,p0=pat[0];
-  for(let i=0;i+m<=n;i++){if(buf[i]===p0){let ok=true;for(let j=1;j<m;j++){if(buf[i+j]!==pat[j]){ok=false;break;}}if(ok)res.push(i);}}return res;}
-function findFirst(buf,pat){const n=buf.length,m=pat.length,p0=pat[0];
-  for(let i=0;i+m<=n;i++){if(buf[i]===p0){let ok=true;for(let j=1;j<m;j++){if(buf[i+j]!==pat[j]){ok=false;break;}}if(ok)return i;}}return -1;}
-function bytesOf(s){return Array.from(s).map(c=>c.charCodeAt(0));}
+<div class="section">
+  <div class="section-label">How it works</div>
+  <div class="section-title">Drop files. Get data.</div>
+  <div class="how-grid">
+    <div class="how-step">
+      <div class="step-num">1</div>
+      <h3>Open the analyzer</h3>
+      <p>Click "Open Analyzer" above — or download and open the HTML file directly from disk. Works offline.</p>
+    </div>
+    <div class="how-step">
+      <div class="step-num">2</div>
+      <h3>Drop your .xrk files</h3>
+      <p>Drag one session or a whole day's worth. The browser parses the binary format client-side in milliseconds.</p>
+    </div>
+    <div class="how-step">
+      <div class="step-num">3</div>
+      <h3>Label drivers (optional)</h3>
+      <p>Assign names to files. Match stints across sessions. The ideal lap pulls the best sector from everyone.</p>
+    </div>
+    <div class="how-step">
+      <div class="step-num">4</div>
+      <h3>Analyze</h3>
+      <p>Explore the heatmap, player, and coaching view. Find your biggest opportunities and go faster next session.</p>
+    </div>
+  </div>
+</div>
 
-// ---- math helpers ----
-const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
-function std(a){if(a.length<2)return 0;const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)*(x-m),0)/(a.length-1));}
-function median(a){const b=a.slice().sort((x,y)=>x-y),n=b.length;return n%2?b[(n-1)/2]:(b[n/2-1]+b[n/2])/2;}
-function percentile(a,p){const b=a.slice().sort((x,y)=>x-y);if(b.length===1)return b[0];const idx=(p/100)*(b.length-1),lo=Math.floor(idx),hi=Math.ceil(idx);return b[lo]+(b[hi]-b[lo])*(idx-lo);}
-function smooth(a,k){if(k<=1)return a.slice();const n=a.length,out=new Array(n),h=Math.floor(k/2);
-  for(let i=0;i<n;i++){let s=0,c=0;for(let j=-h;j<=h;j++){const t=i+j;if(t>=0&&t<n){s+=a[t];c++;}}out[i]=s/c;}return out;}
-function gradient(a){const n=a.length,g=new Array(n);if(n<2){return a.map(()=>0);}
-  g[0]=a[1]-a[0];g[n-1]=a[n-1]-a[n-2];for(let i=1;i<n-1;i++)g[i]=(a[i+1]-a[i-1])/2;return g;}
-function unwrap(a){const out=a.slice();let off=0;for(let i=1;i<a.length;i++){let d=a[i]-a[i-1];if(d>Math.PI)off-=2*Math.PI;else if(d<-Math.PI)off+=2*Math.PI;out[i]=a[i]+off;}return out;}
-function interp(xq,xp,fp){ // xp ascending
-  const out=new Array(xq.length);let j=0;
-  for(let q=0;q<xq.length;q++){const x=xq[q];
-    while(j<xp.length-2 && xp[j+1]<x)j++;
-    let x0=xp[j],x1=xp[j+1],y0=fp[j],y1=fp[j+1];
-    if(x1===x0)out[q]=y0;else out[q]=y0+(y1-y0)*(x-x0)/(x1-x0);
-    if(x<=xp[0])out[q]=fp[0];if(x>=xp[xp.length-1])out[q]=fp[fp.length-1];
-  }return out;}
+<div class="cta-section">
+  <h2>Ready to dig into your data?</h2>
+  <p>Try the live demo with a real 7-hour, 4-driver endurance race at NJMP Thunderbolt,<br>or jump straight into the analyzer with your own files.</p>
+  <div class="cta-btns">
+    <a href="demo/NJMP_telemetry_demo.html" class="btn btn-demo btn-lg">▶ Live demo — NJMP Thunderbolt</a>
+    <a href="AiM_XRK_Analyzer.html" class="btn btn-primary btn-lg">Open the analyzer →</a>
+  </div>
+</div>
 
-// ---- ECEF -> geodetic not needed; we use ENU with shared origin ----
+<footer>
+  <p>
+    MIT License ·
+    <a href="https://github.com/countess427/xrk-analyzer">GitHub</a> ·
+    No data leaves your machine · No account required
+  </p>
+</footer>
 
-// ---- parse one file ----
-function parseXRK(u8){
-  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
-  const GPSPAT=bytesOf("<hGPS").concat([0x00,0x38,0x00,0x00,0x00,0x01,0x3e]);
-  const gpsHits=findAll(u8,GPSPAT);
-  const gps=new Array(gpsHits.length);
-  for(let k=0;k<gpsHits.length;k++){const b=gpsHits[k]+GPSPAT.length;
-    gps[k]={mc:dv.getInt32(b,true),itow:dv.getInt32(b+4,true),
-            X:dv.getInt32(b+16,true)/100,Y:dv.getInt32(b+20,true)/100,Z:dv.getInt32(b+24,true)/100};}
-  const LAPPAT=bytesOf("<hLAP");
-  const lapHits=findAll(u8,LAPPAT);
-  const laps=[];
-  for(const p of lapHits){const base=p+12;
-    laps.push({num:dv.getUint16(base+2,true),dur:dv.getUint32(base+4,true)/1000,start:dv.getUint32(base+16,true)});}
-  function meta(tag){const pat=bytesOf("<h"+tag).concat([0x00]);const i=findFirst(u8,pat);if(i<0)return null;
-    const lenOff=i+pat.length;const len=dv.getUint32(lenOff,true);const start=lenOff+6;
-    let s='';for(let j=0;j<len;j++){const c=u8[start+j];if(c===0)break;s+=String.fromCharCode(c);}return s;}
-  return {gps,laps,date:meta("TMD"),time:meta("TMT"),device:meta("NDV"),
-          vehicle:meta("VEH"),racer:meta("RCR"),champ:meta("CMP")};
-}
-
-// ---- ENU projection given shared origin ----
-function makeENU(originXYZ){
-  const [x0,y0,z0]=originXYZ;
-  const lat0=Math.atan2(z0,Math.hypot(x0,y0)),lon0=Math.atan2(y0,x0);
-  const sl=Math.sin(lat0),cl=Math.cos(lat0),so=Math.sin(lon0),co=Math.cos(lon0);
-  return (X,Y,Z)=>{const dx=X-x0,dy=Y-y0,dz=Z-z0;
-    return [-so*dx+co*dy, -sl*co*dx-sl*so*dy+cl*dz];};
-}
-
-// ---- corner detection on ref speed (circular, prominence-ish) ----
-function detectCorners(v){const n=v.length,W=14,prom=3,maxv=Math.max.apply(null,v);
-  const at=i=>v[((i%n)+n)%n];const cand=[];
-  for(let i=0;i<n;i++){let isMin=true,lo=at(i);
-    for(let k=-W;k<=W;k++){if(at(i+k)<lo-1e-9){isMin=false;break;}}
-    if(!isMin)continue;let lmax=lo;for(let k=1;k<=2*W;k++){lmax=Math.max(lmax,at(i-k));if(at(i-k)<lo)break;}
-    let rmax=lo;for(let k=1;k<=2*W;k++){rmax=Math.max(rmax,at(i+k));if(at(i+k)<lo)break;}
-    if(Math.min(lmax,rmax)-lo>=prom && lo<maxv*0.985)cand.push(i);}
-  // dedupe within W keeping lowest
-  cand.sort((a,b)=>a-b);const apex=[];
-  for(const i of cand){if(!apex.length||i-apex[apex.length-1]>W)apex.push(i);
-    else if(at(i)<at(apex[apex.length-1]))apex[apex.length-1]=i;}
-  return apex;
-}
-
-// ---- build full dataset from parsed files + driver map ----
-// parsedList: [{code, parsed}]  driverMap: {code: "Driver X"}
-function buildDataset(parsedList, driverMap){
-  // shared origin from first file with gps
-  const first=parsedList.find(p=>p.parsed.gps.length);
-  if(!first) throw new Error("No GPS data found in any file.");
-  const g0=first.parsed.gps;let sx=0,sy=0,sz=0;for(const s of g0){sx+=s.X;sy+=s.Y;sz+=s.Z;}
-  const enu=makeENU([sx/g0.length,sy/g0.length,sz/g0.length]);
-  const order=parsedList.map(p=>p.code);
-  const allLaps=[];
-  for(const {code,parsed} of parsedList){
-    const G=parsed.gps;if(!G.length||!parsed.laps.length)continue;
-    const mc=G.map(s=>s.mc);const EN=G.map(s=>enu(s.X,s.Y,s.Z));
-    const E=EN.map(p=>p[0]),N=EN.map(p=>p[1]);
-    let dt=[];for(let i=0;i<mc.length-1;i++)dt.push((mc[i+1]-mc[i])/1000);dt.push(dt[dt.length-1]||0.1);
-    dt=dt.map(x=>x<=0?0.1:x);
-    const gE=gradient(E),gN=gradient(N);
-    const ds=E.map((_,i)=>Math.hypot(gE[i],gN[i]));
-    let v=smooth(ds.map((d,i)=>d/dt[i]),7);
-    const headRaw=unwrap(N.map((_,i)=>Math.atan2(gN[i],gE[i])));
-    const longg=smooth(gradient(v).map((g,i)=>g/dt[i]),9).map(x=>x/9.81);
-    const yaw=smooth(gradient(headRaw).map((g,i)=>g/dt[i]),9);
-    const latg=v.map((vv,i)=>vv*yaw[i]/9.81);
-    const laps=parsed.laps;
-    for(let li=0;li<laps.length;li++){
-      const lo = li===0 ? mc[0]-1 : laps[li-1].start;
-      const hi = laps[li].start;
-      const idx=[];for(let i=0;i<mc.length;i++){if(mc[i]>lo&&mc[i]<=hi)idx.push(i);}
-      if(idx.length<20)continue;
-      const eE=idx.map(i=>E[i]),eN=idx.map(i=>N[i]),ev=idx.map(i=>v[i]),
-            elg=idx.map(i=>longg[i]),etg=idx.map(i=>latg[i]),emc=idx.map(i=>mc[i]);
-      const cd=[0];for(let i=1;i<eE.length;i++)cd.push(cd[i-1]+Math.hypot(eE[i]-eE[i-1],eN[i]-eN[i-1]));
-      const L=cd[cd.length-1];const geo_ok=L>2000&&L<4500;
-      const t=emc.map(m=>(m-emc[0])/1000);
-      const frac=cd.map(d=>L>0?d/L:0);
-      const grid=[];for(let i=0;i<NG;i++)grid.push(i/(NG-1));
-      const rs=arr=>interp(grid,frac,arr);
-      allLaps.push({code,driver:driverMap[code],num:laps[li].num,dur:laps[li].dur,L,geo_ok,
-        gv:rs(ev).map(x=>x*2.236936),glg:rs(elg),gtg:rs(etg),gE:rs(eE),gN:rs(eN),gt:rs(t)});
-    }
-  }
-  if(!allLaps.length) throw new Error("No valid laps with telemetry found.");
-  // classify green per code
-  const byCode={};allLaps.forEach(l=>{(byCode[l.code]=byCode[l.code]||[]).push(l);});
-  for(const c in byCode){const med=median(byCode[c].map(l=>l.dur));
-    byCode[c].forEach(l=>l.green=l.dur<med+18&&l.dur<140&&l.geo_ok);}
-  const green=allLaps.filter(l=>l.green).sort((a,b)=>a.dur-b.dur);
-  if(!green.length) throw new Error("No clean (green) laps found.");
-  const ref=green[0];
-  // segments
-  const apex=detectCorners(ref.gv);
-  let mids=[];for(let i=0;i<apex.length-1;i++)mids.push((apex[i]+apex[i+1])/2/NG);
-  let bnds=[0].concat(mids).concat([1]);let segments=[];
-  for(let i=0;i<bnds.length-1;i++){let a=bnds[i],b=bnds[i+1];
-    if(b-a>0.14){const k=Math.floor((b-a)/0.10)+1;for(let j=0;j<k;j++)segments.push([a+(b-a)*j/k,a+(b-a)*(j+1)/k]);}
-    else segments.push([a,b]);}
-  const NS=segments.length;
-  const gridx=[];for(let i=0;i<NG;i++)gridx.push(i/(NG-1));
-  allLaps.forEach(l=>{const total=l.gt[NG-1],scale=total>0?l.dur/total:1;
-    l.seg=segments.map(([a,b])=>(interp([b],gridx,l.gt)[0]-interp([a],gridx,l.gt)[0])*scale);});
-  // distance array from ref path
-  const distm=[0];for(let i=1;i<NG;i++)distm.push(distm[i-1]+Math.hypot(ref.gE[i]-ref.gE[i-1],ref.gN[i]-ref.gN[i-1]));
-  // order + best5
-  order.sort();const ordU=parsedList.map(p=>p.code);
-  allLaps.sort((a,b)=>ordU.indexOf(a.code)-ordU.indexOf(b.code)||a.num-b.num);
-  const best5=new Set(green.slice(0,5));
-  const laps_json=allLaps.map((l,i)=>({id:i,code:l.code,driver:l.driver,num:l.num,t:+l.dur.toFixed(3),
-    green:!!l.green,best5:best5.has(l),seg:l.seg.map(x=>+x.toFixed(3)),
-    v:l.gv.map(x=>+x.toFixed(1)),lng:l.glg.map(x=>+x.toFixed(2)),lat:l.gtg.map(x=>+x.toFixed(2)),
-    x:l.gE.map(x=>+x.toFixed(1)),y:l.gN.map(x=>+x.toFixed(1)),ct:l.gt.map((x,j)=>+( (l.dur/(l.gt[NG-1]||1))*x ).toFixed(2))}));
-  const seg_centers=segments.map(([a,b])=>[+interp([(a+b)/2],gridx,ref.gE)[0].toFixed(1),+interp([(a+b)/2],gridx,ref.gN)[0].toFixed(1)]);
-  const driversU=[...new Set(parsedList.map(p=>driverMap[p.code]))];
-  const DATA={track:first.parsed.device||"Track",date:first.parsed.date||"",
-    drivers:driverMap,order:ordU,driversList:driversU,dist:distm.map(x=>+x.toFixed(1)),
-    refpath:ref.gE.map((x,i)=>[+x.toFixed(1),+ref.gN[i].toFixed(1)]),
-    segments:segments.map(s=>[+s[0].toFixed(4),+s[1].toFixed(4)]),seg_centers,ngrid:NG,laps:laps_json};
-  // STATS
-  function pstat(d){return {n:d.length,mean:mean(d),med:median(d),best:Math.min.apply(null,d),
-    std:std(d),p95:percentile(d,95),p99:percentile(d,99),cv:d.length>1?std(d)/mean(d)*100:0};}
-  const groups={};allLaps.forEach(l=>{const g=groups[l.driver]=groups[l.driver]||{green:[],all:[]};g.all.push(l.dur);if(l.green)g.green.push(l.dur);});
-  const segBest=new Array(NS).fill(1e9),segWho=new Array(NS).fill('');
-  const dsb={},dsl={};driversU.forEach(d=>{dsb[d]=new Array(NS).fill(1e9);dsl[d]=Array.from({length:NS},()=>[]);});
-  allLaps.forEach(l=>{if(!l.green)return;for(let s=0;s<NS;s++){const t=l.seg[s];dsl[l.driver][s].push(t);
-    if(t<dsb[l.driver][s])dsb[l.driver][s]=t;if(t<segBest[s]){segBest[s]=t;segWho[s]=l.driver;}}});
-  const STATS={ideal:segBest.reduce((a,b)=>a+b,0),ref:{t:ref.dur,driver:ref.driver},NS,
-    seg_best:segBest,seg_who:segWho,drv_seg_best:dsb,
-    drv_seg_mean:{},drivers:{}};
-  driversU.forEach(d=>{STATS.drv_seg_mean[d]=dsl[d].map(a=>a.length?mean(a):null);
-    const s=pstat(groups[d].green);STATS.drivers[d]={n:s.n,best:s.best,mean:s.mean,med:s.med,std:s.std,cv:s.cv,
-      p95:s.p95,p99:s.p99,caution:groups[d].all.length-s.n,theo:dsb[d].reduce((a,b)=>a+b,0)};});
-  return {DATA,STATS,driversU};
-}
-
-const api={parseXRK,buildDataset,NG};
-if(typeof module!=='undefined'&&module.exports)module.exports=api;
-root.XRKCORE=api;
-})(typeof window!=='undefined'?window:globalThis);
-</script>
-<script>
-"use strict";
-const PAL=['#ffd23f','#4fc3f7','#ff6b6b','#6bcb77','#b48ead','#f4a261','#2dd4bf','#e76f51','#a3e635','#c084fc'];
-let DATA,STATS,NG,SEG,NS,DIST,ORDERD,DCOL,laps,greenLaps,best;
-let cur,ghost='ref',cursor=0,playing=false,speedMul=2;
-let tdTurnIdx=0,tdCursor=0,tdPlaying=false,tdRaf=null,tdLast=0,tdAcc=0;
-let raf=null,last=0,acc=0,bb,mapBadges=[];
-let rawSessions=[],driverMap={};
-const $=id=>document.getElementById(id);
-function fmt(s){if(s==null||isNaN(s))return '–';let m=Math.floor(s/60);return m+':'+(s-60*m).toFixed(3).padStart(6,'0');}
-function fmtS(s){return (s>=0?'+':'')+s.toFixed(3);}
-const byId=id=>laps[id];
-
-// ---------- file handling ----------
-const drop=$('drop'),fileInput=$('file');
-$('browse').onclick=()=>fileInput.click();
-drop.onclick=e=>{if(e.target.id==='drop'||e.target.tagName==='H1')fileInput.click();};
-drop.ondragover=e=>{e.preventDefault();drop.classList.add('over');};
-drop.ondragleave=()=>drop.classList.remove('over');
-drop.ondrop=e=>{e.preventDefault();drop.classList.remove('over');handleFiles(e.dataTransfer.files);};
-fileInput.onchange=e=>handleFiles(e.target.files);
-$('reload').onclick=()=>fileInput.click();
-async function inflate(u8){for(const f of ['deflate','deflate-raw']){try{const ds=new DecompressionStream(f);
-  const ab=await new Response(new Blob([u8]).stream().pipeThrough(ds)).arrayBuffer();return new Uint8Array(ab);}catch(e){}}
-  throw new Error('.xrz decompress unsupported in this browser');}
-async function handleFiles(list){
-  const files=[...list].filter(f=>/\.(xrk|xrz)$/i.test(f.name));
-  if(!files.length){$('status').textContent='Please drop .xrk or .xrz files.';return;}
-  $('status').textContent='Parsing '+files.length+' file(s)…';
-  try{
-    const parsed=[];
-    for(const f of files){let u8=new Uint8Array(await f.arrayBuffer());
-      if(/\.xrz$/i.test(f.name))u8=await inflate(u8);
-      parsed.push({code:f.name.replace(/\.(xrk|xrz)$/i,''),fname:f.name,parsed:XRKCORE.parseXRK(u8)});}
-    rawSessions=parsed;
-    driverMap={};parsed.forEach((p,i)=>driverMap[p.code]='Driver '+(i+1));
-    $('status').textContent='';rebuild();
-  }catch(err){$('status').textContent='Error: '+err.message;}
-}
-function rebuild(){
-  let res;try{res=XRKCORE.buildDataset(rawSessions,driverMap);}catch(err){$('status').textContent='Error: '+err.message;return;}
-  DATA=res.DATA;STATS=res.STATS;buildSessions();initDashboard();
-}
-function buildSessions(){
-  let h='';rawSessions.forEach(p=>{const pr=p.parsed;
-    h+=`<div class="sesrow"><span class="fn">${p.fname}</span>`+
-       `<input type="text" data-code="${p.code}" value="${driverMap[p.code]}" style="width:120px"/>`+
-       `<span class="pill">${pr.laps.length} laps · ${pr.gps.length} GPS · ${pr.date||''} ${pr.time||''} · ${pr.device||''}</span></div>`;});
-  $('sessions').innerHTML=h;$('sesPanel').style.display='';
-  document.querySelectorAll('#sessions input').forEach(inp=>inp.onchange=()=>{driverMap[inp.dataset.code]=inp.value||inp.dataset.code;rebuild();});
-}
-
-// ---------- analysis helpers (UI side) ----------
-function bestLapInSeg(s){let b=null;for(const l of greenLaps){if(!b||l.seg[s]<b.seg[s])b=l;}return b;}
-function events(lap,s){const a=SEG[s][0],b=SEG[s][1],i0=Math.floor(a*NG),i1=Math.floor(b*NG);
-  let apex=i0,vmin=1e9;for(let i=i0;i<i1;i++){if(lap.v[i]<vmin){vmin=lap.v[i];apex=i;}}
-  let brake=apex;for(let i=i0;i<=apex;i++){if(lap.lng[i]<-0.20){brake=i;break;}}
-  let acc=apex;for(let i=apex;i<i1;i++){if(lap.lng[i]>0.15){acc=i;break;}}
-  let peak=0;for(let i=brake;i<=apex;i++)peak=Math.min(peak,lap.lng[i]);
-  return {i0,i1,apex,brake,acc,vmin,peak,bdist:DIST[apex]-DIST[brake]};}
-function coach(s,lap,ref){const e=events(lap,s),r=events(ref,s),loss=lap.seg[s]-ref.seg[s],tips=[];
-  if(r.bdist>14){const db=e.bdist-r.bdist;
-    if(db>8)tips.push(['brake',`<b>Brake later</b> — you begin braking ~${Math.round(db)} m sooner than the best line (${Math.round(e.bdist)} m before apex vs ${Math.round(r.bdist)} m).`]);
-    else if(db<-8)tips.push(['ok',`Brake point ${Math.round(-db)} m later than best — aggressive, good.`]);
-    if(e.peak>r.peak+0.08)tips.push(['brake',`<b>Brake harder</b> — peak ${e.peak.toFixed(2)} g vs ${r.peak.toFixed(2)} g.`]);}
-  const dv=e.vmin-r.vmin;
-  if(dv<-2)tips.push(['apex',`<b>Carry more apex speed</b> — minimum ${Math.round(e.vmin)} mph vs ${Math.round(r.vmin)} mph (~${Math.round(-dv)} mph slower).`]);
-  else if(dv>2)tips.push(['ok',`Strong apex speed (+${Math.round(dv)} mph vs best).`]);
-  const da=DIST[e.acc]-DIST[r.acc];
-  if(da>10&&e.vmin>=r.vmin-3)tips.push(['throttle',`<b>Get to throttle sooner</b> — gas ~${Math.round(da)} m later than best line.`]);
-  if(!tips.length)tips.push(['ok','Very close to the best line here.']);return {loss,tips,e,r};}
-const tipCat={brake:'Braking',apex:'Apex speed',throttle:'Throttle',ok:'OK'};
-const tipChipCol={brake:'#ff6b6b',apex:'#ffd23f',throttle:'#6bcb77',ok:'#3a4452'};
-
-// ---------- map + traces ----------
-function mapXform(cv){const pad=26,w=cv.width,h=cv.height;const s=Math.min((w-2*pad)/(bb.x1-bb.x0),(h-2*pad)/(bb.y1-bb.y0));
-  const ox=pad+((w-2*pad)-s*(bb.x1-bb.x0))/2,oy=pad+((h-2*pad)-s*(bb.y1-bb.y0))/2;return p=>[ox+s*(p[0]-bb.x0),h-(oy+s*(p[1]-bb.y0))];}
-function spColor(v,lo,hi){let t=Math.max(0,Math.min(1,(v-lo)/(hi-lo)));const r=t<0.5?255:Math.round(255*(1-(t-0.5)*2));const g=t<0.5?Math.round(255*(t*2)):255;return `rgb(${r},${Math.min(255,g)},${t<0.5?60:120})`;}
-function drawMap(){const cv=$('map'),ctx=cv.getContext('2d'),T=mapXform(cv);ctx.clearRect(0,0,cv.width,cv.height);
-  const L=byId(cur),lo=Math.min(...L.v),hi=Math.max(...L.v);ctx.lineWidth=5;ctx.lineCap='round';
-  for(let i=1;i<NG;i++){const a=T([L.x[i-1],L.y[i-1]]),b=T([L.x[i],L.y[i]]);ctx.strokeStyle=spColor((L.v[i]+L.v[i-1])/2,lo,hi);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}
-  ctx.font='bold 11px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';mapBadges=[];
-  DATA.seg_centers.forEach((c,i)=>{const p=T(c);mapBadges.push({i,x:p[0],y:p[1]});const sel=i===tdTurnIdx;
-    ctx.fillStyle=sel?'#23304a':'#0d1117';ctx.beginPath();ctx.arc(p[0],p[1],10,0,7);ctx.fill();ctx.strokeStyle=sel?'#58a6ff':'#3a4452';ctx.lineWidth=sel?2:1;ctx.stroke();ctx.fillStyle=sel?'#fff':'#cdd6e0';ctx.fillText('T'+(i+1),p[0],p[1]);});
-  const cp=T([L.x[cursor],L.y[cursor]]);ctx.beginPath();ctx.arc(cp[0],cp[1],7,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle=DCOL[L.driver];ctx.stroke();
-  const G=ghostLap();if(G){const gp=T([G.x[cursor],G.y[cursor]]);ctx.beginPath();ctx.arc(gp[0],gp[1],4.5,0,7);ctx.fillStyle='rgba(255,255,255,.5)';ctx.fill();}}
-const ghostLap=()=>ghost==='ref'?best:(ghost==='none'?null:byId(+ghost));
-function drawSpeed(){const cv=$('speed'),ctx=cv.getContext('2d'),w=cv.width,h=cv.height,pad=24;ctx.clearRect(0,0,w,h);
-  const L=byId(cur),G=ghostLap();let mx=0,mn=999;[L,G].forEach(o=>{if(o){mx=Math.max(mx,...o.v);mn=Math.min(mn,...o.v);}});
-  mx=Math.ceil(mx/10)*10;mn=Math.floor(mn/10)*10;const X=i=>pad+(w-pad-6)*i/(NG-1),Y=v=>h-pad-(h-2*pad)*(v-mn)/(mx-mn);
-  ctx.fillStyle='#6b7686';ctx.font='10px sans-serif';ctx.textAlign='right';
-  for(let v=mn;v<=mx;v+=20){ctx.strokeStyle='#1f2733';ctx.beginPath();ctx.moveTo(pad,Y(v));ctx.lineTo(w-4,Y(v));ctx.stroke();ctx.fillText(v,pad-3,Y(v)+3);}
-  SEG.forEach((s,i)=>{const x=X(s[0]*(NG-1));ctx.strokeStyle=i===tdTurnIdx?'#3b4a63':'#283042';ctx.beginPath();ctx.moveTo(x,pad-6);ctx.lineTo(x,h-pad);ctx.stroke();});
-  const line=(o,col,wd,al)=>{ctx.globalAlpha=al;ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.beginPath();o.v.forEach((v,i)=>{const x=X(i),y=Y(v);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.globalAlpha=1;};
-  if(G)line(G,'#9aa4b2',1,.55);line(L,DCOL[L.driver],2,1);
-  const cx=X(cursor);ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(cx,pad-6);ctx.lineTo(cx,h-pad);ctx.stroke();ctx.globalAlpha=1;}
-function drawDelta(){const cv=$('delta'),ctx=cv.getContext('2d'),w=cv.width,h=cv.height,pad=24;ctx.clearRect(0,0,w,h);
-  const L=byId(cur),G=ghostLap();if(!G){ctx.fillStyle='#6b7686';ctx.fillText('no compare lap',w/2-30,h/2);return;}
-  let d=L.ct.map((c,i)=>c-G.ct[i]),mx=Math.max(0.2,...d.map(Math.abs));const X=i=>pad+(w-pad-6)*i/(NG-1),Y=v=>h/2-(h/2-12)*v/mx;
-  SEG.forEach(s=>{const x=X(s[0]*(NG-1));ctx.strokeStyle='#283042';ctx.beginPath();ctx.moveTo(x,2);ctx.lineTo(x,h-2);ctx.stroke();});
-  ctx.strokeStyle='#3a4452';ctx.beginPath();ctx.moveTo(pad,h/2);ctx.lineTo(w-4,h/2);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(X(0),Y(0));d.forEach((v,i)=>ctx.lineTo(X(i),Y(v)));ctx.lineTo(X(NG-1),Y(0));ctx.closePath();
-  const grd=ctx.createLinearGradient(0,0,0,h);grd.addColorStop(0,'rgba(255,107,107,.5)');grd.addColorStop(.5,'rgba(255,107,107,.1)');grd.addColorStop(.5,'rgba(58,210,159,.1)');grd.addColorStop(1,'rgba(58,210,159,.5)');
-  ctx.fillStyle=grd;ctx.fill();ctx.strokeStyle='#cdd6e0';ctx.lineWidth=1.4;ctx.beginPath();d.forEach((v,i)=>{const x=X(i),y=Y(v);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
-  ctx.fillStyle='#6b7686';ctx.font='10px sans-serif';ctx.textAlign='left';ctx.fillText('+'+mx.toFixed(1)+'s',2,12);ctx.fillText('-'+mx.toFixed(1)+'s',2,h-4);
-  const cx=X(cursor);ctx.strokeStyle='#fff';ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(cx,2);ctx.lineTo(cx,h-2);ctx.stroke();ctx.globalAlpha=1;}
-function drawGG(){const cv=$('gg'),ctx=cv.getContext('2d'),w=cv.width,h=cv.height;ctx.clearRect(0,0,w,h);
-  const L=byId(cur),cx=w/2,cy=h/2,R=(Math.min(w,h)/2-12)/1.2;ctx.strokeStyle='#283042';ctx.fillStyle='#6b7686';ctx.font='10px sans-serif';ctx.textAlign='center';
-  [0.5,1.0].forEach(g=>{ctx.beginPath();ctx.arc(cx,cy,R*g,0,7);ctx.stroke();ctx.fillText(g+'g',cx+R*g,cy-3);});
-  ctx.beginPath();ctx.moveTo(cx-R*1.2,cy);ctx.lineTo(cx+R*1.2,cy);ctx.moveTo(cx,cy-R*1.2);ctx.lineTo(cx,cy+R*1.2);ctx.stroke();
-  for(let i=1;i<=cursor;i++){const x=cx+R*L.lat[i],y=cy+R*L.lng[i];ctx.fillStyle=`rgba(88,166,255,${0.12+0.5*i/Math.max(1,cursor)})`;ctx.beginPath();ctx.arc(x,y,2,0,7);ctx.fill();}
-  const x=cx+R*L.lat[cursor],y=cy+R*L.lng[cursor];ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,4,0,7);ctx.fill();
-  ctx.fillStyle='#6b7686';ctx.textAlign='left';ctx.fillText('lat →',6,cy-6);ctx.fillText('accel ↓ / brake ↑',6,h-6);}
-function readout(){const L=byId(cur),G=ghostLap();$('rSpd').textContent=L.v[cursor].toFixed(0);$('rLong').textContent=L.lng[cursor].toFixed(2);
-  $('rLat').textContent=Math.abs(L.lat[cursor]).toFixed(2);$('rT').textContent=fmt(L.ct[cursor]);
-  const dv=G?L.ct[cursor]-G.ct[cursor]:null;$('rDelta').textContent=G?fmtS(dv):'–';$('rDelta').style.color=G?(dv>0?'#ff6b6b':'#3ad29f'):'';}
-function redraw(){drawMap();drawSpeed();drawDelta();drawGG();readout();$('scrub').value=cursor;}
-function setLap(id){cur=id;$('lapSel').value=id;cursor=0;redraw();tdReset();oppRender();}
-
-// ---------- turn detail ----------
-function tdRange(){const i0=Math.max(0,Math.floor(SEG[tdTurnIdx][0]*NG)-8),i1=Math.min(NG,Math.floor(SEG[tdTurnIdx][1]*NG)+8);return[i0,i1];}
-function tdMapDraw(){const cv=$('tdMap'),ctx=cv.getContext('2d'),w=cv.width,h=cv.height,pad=30;ctx.clearRect(0,0,w,h);
-  const lap=byId(cur),s=tdTurnIdx,ref=bestLapInSeg(s),[i0,i1]=tdRange();let xs=[],ys=[];
-  for(let i=i0;i<i1;i++){xs.push(lap.x[i],ref.x[i]);ys.push(lap.y[i],ref.y[i]);}
-  const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
-  const sc=Math.min((w-2*pad)/Math.max(1,x1-x0),(h-2*pad)/Math.max(1,y1-y0));const ox=(w-sc*(x1-x0))/2,oy=(h-sc*(y1-y0))/2;const T=(x,y)=>[ox+sc*(x-x0),h-(oy+sc*(y-y0))];
-  const path=(L,col,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=3;ctx.setLineDash(dash);ctx.beginPath();for(let i=i0;i<i1;i++){const p=T(L.x[i],L.y[i]);i===i0?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1]);}ctx.stroke();ctx.setLineDash([]);};
-  const marks=L=>{const e=events(L,s);let p=T(L.x[e.brake],L.y[e.brake]);ctx.fillStyle='#ff6b6b';ctx.beginPath();ctx.arc(p[0],p[1],5,0,7);ctx.fill();
-    p=T(L.x[e.apex],L.y[e.apex]);ctx.fillStyle='#ffd23f';ctx.save();ctx.translate(p[0],p[1]);ctx.rotate(Math.PI/4);ctx.fillRect(-4,-4,8,8);ctx.restore();
-    p=T(L.x[e.acc],L.y[e.acc]);ctx.fillStyle='#6bcb77';ctx.beginPath();ctx.moveTo(p[0],p[1]-5);ctx.lineTo(p[0]+5,p[1]+4);ctx.lineTo(p[0]-5,p[1]+4);ctx.closePath();ctx.fill();};
-  path(ref,'#9aa4b2',[6,5]);path(lap,DCOL[lap.driver],[]);marks(ref);marks(lap);
-  const ci=Math.min(Math.max(tdCursor,i0),i1-1);let gp=T(ref.x[ci],ref.y[ci]);ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.arc(gp[0],gp[1],4,0,7);ctx.fill();
-  let cp=T(lap.x[ci],lap.y[ci]);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cp[0],cp[1],6,0,7);ctx.fill();ctx.strokeStyle=DCOL[lap.driver];ctx.lineWidth=2;ctx.stroke();
-  ctx.fillStyle='#cdd6e0';ctx.font='bold 13px sans-serif';ctx.textAlign='left';ctx.fillText('Turn '+(s+1),10,20);}
-function tdSpeedDraw(){const cv=$('tdSpeed'),ctx=cv.getContext('2d'),w=cv.width,h=cv.height,pad=28;ctx.clearRect(0,0,w,h);
-  const lap=byId(cur),s=tdTurnIdx,ref=bestLapInSeg(s),[i0,i1]=tdRange();let mn=1e9,mx=0;
-  for(let i=i0;i<i1;i++){mn=Math.min(mn,lap.v[i],ref.v[i]);mx=Math.max(mx,lap.v[i],ref.v[i]);}mn=Math.floor(mn/10)*10-2;mx=Math.ceil(mx/10)*10;
-  const X=i=>pad+(w-pad-8)*(i-i0)/(i1-1-i0),Y=v=>h-pad-(h-2*pad)*(v-mn)/(mx-mn);
-  ctx.fillStyle='#6b7686';ctx.font='10px sans-serif';ctx.textAlign='right';
-  for(let v=mn;v<=mx;v+=20){ctx.strokeStyle='#1f2733';ctx.beginPath();ctx.moveTo(pad,Y(v));ctx.lineTo(w-4,Y(v));ctx.stroke();ctx.fillText(v,pad-3,Y(v)+3);}
-  const ln=(L,col,dash,wd)=>{ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.setLineDash(dash);ctx.beginPath();for(let i=i0;i<i1;i++){const x=X(i),y=Y(L.v[i]);i===i0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();ctx.setLineDash([]);};
-  ln(ref,'#9aa4b2',[6,5],1.4);ln(lap,DCOL[lap.driver],[],2.2);
-  const vmark=(L,solid)=>{const e=events(L,s);[['brake','#ff6b6b'],['apex','#ffd23f'],['acc','#6bcb77']].forEach(([k,c])=>{const x=X(e[k]);ctx.strokeStyle=c;ctx.globalAlpha=solid?0.9:0.4;ctx.lineWidth=solid?1.6:1;ctx.setLineDash(solid?[]:[3,3]);ctx.beginPath();ctx.moveTo(x,pad-4);ctx.lineTo(x,h-pad);ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);});};
-  vmark(ref,false);vmark(lap,true);
-  const ci=Math.min(Math.max(tdCursor,i0),i1-1),cx=X(ci);ctx.strokeStyle='#fff';ctx.globalAlpha=.7;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(cx,pad-4);ctx.lineTo(cx,h-pad);ctx.stroke();ctx.globalAlpha=1;
-  ctx.fillStyle='#cdd6e0';ctx.textAlign='left';ctx.font='11px sans-serif';ctx.fillText(`${lap.driver}  ${fmt(lap.seg[s])}s`,pad,14);ctx.fillStyle='#9aa4b2';ctx.fillText(`best ${fmt(ref.seg[s])}s (${ref.driver})`,pad+160,14);}
-function tdReadout(){const lap=byId(cur),ref=bestLapInSeg(tdTurnIdx),[i0,i1]=tdRange(),ci=Math.min(Math.max(tdCursor,i0),i1-1);
-  $('tdSpd').textContent=lap.v[ci].toFixed(0);$('tdG').textContent=lap.lng[ci].toFixed(2);
-  const c=coach(tdTurnIdx,lap,ref);$('tdDelta').textContent=fmtS(c.loss);$('tdDelta').style.color=c.loss>0.05?'#ff6b6b':'#6bcb77';}
-function tdTips(){const lap=byId(cur),s=tdTurnIdx,ref=bestLapInSeg(s),c=coach(s,lap,ref);
-  $('tdLapName').innerHTML=`Coaching: <b style="color:${DCOL[lap.driver]}">${lap.driver}</b> ${lap.code} L${lap.num} (${fmt(lap.t)})`;
-  let h=`<div style="font-size:13px;margin-bottom:6px">Turn ${s+1}: <b style="color:${c.loss>0.05?'#ff6b6b':'#6bcb77'}">${fmtS(c.loss)}s</b> vs best line · ref ${ref.driver} L${ref.num}`+(lap.id===ref.id?' <span class="muted">(benchmark)</span>':'')+`</div>`;
-  c.tips.forEach(t=>h+=`<div class="tip ${t[0]}">${t[1]}</div>`);$('tdTips').innerHTML=h;}
-function tdLossList(){const lap=byId(cur),wl=[];for(let s=0;s<NS;s++){const r=bestLapInSeg(s);wl.push([s,lap.seg[s]-r.seg[s]]);}
-  wl.sort((a,b)=>b[1]-a[1]);const tot=wl.reduce((s,x)=>s+Math.max(0,x[1]),0),mx=Math.max(...wl.map(x=>x[1]),0.1);
-  $('lossHdr').innerHTML=`Time lost per turn vs best lines — total <b>${tot.toFixed(1)}s</b> (click a turn):`;
-  let h='';wl.forEach(([s,l])=>{const pct=Math.max(0,l)/mx*100;h+=`<div class="lossrow ${s===tdTurnIdx?'sel':''}" data-t="${s}"><span class="lb">T${s+1}</span><div class="bar" style="flex:1"><span style="width:${pct}%;background:${l>0.3?'#ff6b6b':l>0.1?'#ffd23f':'#3a4452'}"></span></div><span style="width:52px;text-align:right">${fmtS(l)}s</span></div>`;});
-  $('lossList').innerHTML=h;document.querySelectorAll('.lossrow').forEach(r=>r.onclick=()=>{tdTurnIdx=+r.dataset.t;$('tdTurn').value=tdTurnIdx;tdReset();drawMap();drawSpeed();});}
-function tdRender(){tdMapDraw();tdSpeedDraw();tdReadout();tdTips();tdLossList();}
-function tdReset(){const [i0]=tdRange();tdCursor=i0;tdRender();}
-function tdLoop(ts){if(!tdPlaying)return;if(!tdLast)tdLast=ts;let dt=(ts-tdLast)/1000;tdLast=ts;
-  const lap=byId(cur),[i0,i1]=tdRange(),stepTime=lap.t/NG;tdAcc+=dt*1.3;while(tdAcc>=stepTime){tdAcc-=stepTime;tdCursor++;if(tdCursor>=i1)tdCursor=i0;}
-  tdMapDraw();tdSpeedDraw();tdReadout();tdRaf=requestAnimationFrame(tdLoop);}
-
-// ---------- opportunities ----------
-function oppRender(){const lap=byId(cur),items=[];
-  for(let s=0;s<NS;s++){const ref=bestLapInSeg(s),c=coach(s,lap,ref);const act=c.tips.filter(t=>t[0]!=='ok');if(act.length||c.loss>0.05)items.push({s,loss:c.loss,tips:c.tips,ref});}
-  const tot=items.reduce((a,b)=>a+Math.max(0,b.loss),0);const ranked=items.filter(i=>i.loss>0.08).sort((a,b)=>b.loss-a.loss);
-  $('oppHdr').innerHTML=`<b style="color:${DCOL[lap.driver]}">${lap.driver}</b> ${lap.code} L${lap.num} — matching the best line everywhere ≈ <b style="color:#6bcb77">${tot.toFixed(1)}s</b> (→ ${fmt(Math.max(0,lap.t-tot))}). Top fixes:`;
-  if(!ranked.length)$('oppTop').innerHTML='<div class="opp"><div class="rank">★</div><div>At/near the best line everywhere — benchmark lap.</div></div>';
-  else{let h='';ranked.slice(0,5).forEach((it,i)=>{const main=it.tips.find(t=>t[0]!=='ok')||it.tips[0];
-    h+=`<div class="opp"><div class="rank">${i+1}</div><div style="flex:1"><div><b>Turn ${it.s+1}</b> <span class="sec" style="color:#ff6b6b">+${it.loss.toFixed(2)}s</span><span class="chip" style="background:${tipChipCol[main[0]]}">${tipCat[main[0]]}</span> <a href="#" data-t="${it.s}" class="gocoach" style="color:#58a6ff;font-size:12px">view ›</a></div><div style="margin-top:3px">${main[1]}</div></div></div>`;});
-    $('oppTop').innerHTML=h;document.querySelectorAll('.gocoach').forEach(a=>a.onclick=ev=>{ev.preventDefault();tdTurnIdx=+a.dataset.t;$('tdTurn').value=tdTurnIdx;tdReset();drawMap();drawSpeed();$('tdPanel').scrollIntoView({behavior:'smooth',block:'start'});});}
-  let f='';for(let s=0;s<NS;s++){const ref=bestLapInSeg(s),c=coach(s,lap,ref);
-    f+=`<div class="turnblock"><div style="font-size:13px;margin-bottom:3px"><b>Turn ${s+1}</b> <span style="color:${c.loss>0.05?'#ff6b6b':'#6bcb77'}">${fmtS(c.loss)}s</span> <span class="muted">vs ${ref.driver} L${ref.num}</span></div>`;
-    c.tips.forEach(t=>f+=`<div class="tip ${t[0]}" style="margin:3px 0">${t[1]}</div>`);f+='</div>';}
-  $('oppAll').innerHTML=f;}
-
-// ---------- tables ----------
-function buildTables(){
-  let h='<tr><th class="l">Driver / Stint</th><th>Laps</th><th>Best</th><th>Mean</th><th>Median</th><th>Std (s)</th><th>CV %</th><th>P95</th><th>P99</th><th>Caut.</th></tr>';
-  ORDERD.forEach(d=>{const s=STATS.drivers[d];h+=`<tr><td class="l"><span class="dot" style="background:${DCOL[d]}"></span>${d}</td><td>${s.n}</td><td>${fmt(s.best)}</td><td>${fmt(s.mean)}</td><td>${fmt(s.med)}</td><td>${s.std.toFixed(2)}</td><td>${s.cv.toFixed(2)}</td><td>${fmt(s.p95)}</td><td>${fmt(s.p99)}</td><td>${s.caution}</td></tr>`;});
-  $('statTbl').innerHTML=h;
-  const all=ORDERD.map(d=>STATS.drivers[d].best).concat(ORDERD.map(d=>STATS.drivers[d].theo)).concat([STATS.ideal]);
-  const lo=Math.min(...all)-0.5,hi=Math.max(...all)+0.5,X=v=>((v-lo)/(hi-lo))*100;let th='';
-  ORDERD.forEach(d=>{const s=STATS.drivers[d];th+=`<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12px"><span><span class="dot" style="background:${DCOL[d]}"></span>${d}</span><span class="muted">best ${fmt(s.best)} · theo ${fmt(s.theo)} · gap ${(s.best-s.theo).toFixed(2)}s</span></div><div class="bar" style="margin-top:4px"><span style="left:${X(s.theo)}%;width:${Math.max(0,X(s.best)-X(s.theo))}%;background:${DCOL[d]};opacity:.85"></span><span style="left:${X(s.theo)}%;width:2px;background:#fff"></span></div></div>`;});
-  th+=`<div class="muted" style="margin-top:6px">bar = own theoretical best → real best · Composite ideal = <b style="color:#fff">${fmt(STATS.ideal)}</b></div>`;$('theoBars').innerHTML=th;
-  let sg='<tr><th class="l">Turn</th>';ORDERD.forEach(d=>sg+=`<th><span class="dot" style="background:${DCOL[d]}"></span>${d}</th>`);sg+='<th>Best</th><th class="l">By</th></tr>';
-  for(let s=0;s<NS;s++){sg+=`<tr><td class="l">T${s+1}</td>`;const vals=ORDERD.map(d=>STATS.drv_seg_mean[d][s]);const bst=STATS.seg_best[s],worst=Math.max(...vals.filter(v=>v!=null));
-    ORDERD.forEach((d,i)=>{const v=vals[i];if(v==null){sg+='<td>–</td>';return;}const t=(v-bst)/Math.max(0.01,worst-bst),r=Math.round(40+t*160),g=Math.round(170-t*140),star=STATS.seg_who[s]===d?' ★':'';sg+=`<td style="background:rgba(${r},${g},70,.30)">${v.toFixed(2)}${star}</td>`;});
-    sg+=`<td>${bst.toFixed(2)}</td><td class="l">${STATS.seg_who[s]}</td></tr>`;}
-  $('segTbl').innerHTML=sg;}
-
-// ---------- init / wiring ----------
-function initDashboard(){
-  NG=DATA.ngrid;SEG=DATA.segments;NS=SEG.length;DIST=DATA.dist;ORDERD=DATA.driversList;
-  DCOL={};ORDERD.forEach((d,i)=>DCOL[d]=PAL[i%PAL.length]);
-  laps=DATA.laps;greenLaps=laps.filter(l=>l.green);best=greenLaps.slice().sort((a,b)=>a.t-b.t)[0];
-  cur=best.id;ghost='ref';cursor=0;
-  const xs=DATA.refpath.map(p=>p[0]),ys=DATA.refpath.map(p=>p[1]);bb={x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)};
-  $('subtitle').textContent=`${DATA.date||''} · ${laps.length} laps · ${ORDERD.length} driver(s) · decoded locally from AiM .xrk`;
-  $('kpis').innerHTML=`<div class="kpi">Best lap<b>${fmt(best.t)}</b>${best.driver} L${best.num}</div><div class="kpi">Composite ideal<b>${fmt(STATS.ideal)}</b>best of all sectors</div><div class="kpi">Laps<b>${laps.length}</b>${greenLaps.length} green</div>`;
-  // selects
-  const lapSel=$('lapSel'),ghostSel=$('ghostSel');lapSel.innerHTML='';ghostSel.innerHTML='';
-  const groups={};laps.forEach(l=>{(groups[l.driver]=groups[l.driver]||[]).push(l)});
-  const optLabel=l=>`${l.driver}  ${l.code} L${l.num}  ${fmt(l.t)}${l.green?'':'  (caution)'}`;
-  ORDERD.forEach(d=>{const og=document.createElement('optgroup');og.label=d;(groups[d]||[]).forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=optLabel(l);og.appendChild(o);});lapSel.appendChild(og);});
-  const og2=document.createElement('optgroup');og2.label='Reference';[['ref','Fastest lap ('+best.driver+' L'+best.num+')'],['none','— none —']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;og2.appendChild(o);});ghostSel.appendChild(og2);
-  greenLaps.slice().sort((a,b)=>a.t-b.t).slice(0,12).forEach(l=>{const o=document.createElement('option');o.value=l.id;o.textContent=optLabel(l);og2.appendChild(o);});ghostSel.value='ref';
-  const presets=$('presets');presets.innerHTML='';laps.filter(l=>l.best5).sort((a,b)=>a.t-b.t).forEach((l,i)=>{const b=document.createElement('button');b.className='p';b.innerHTML=`<span class="dot" style="background:${DCOL[l.driver]}"></span>#${i+1} ${fmt(l.t)} <span class="muted">${l.driver} ${l.code}·L${l.num}</span>`;b.onclick=()=>setLap(l.id);presets.appendChild(b);});
-  const tdTurn=$('tdTurn');tdTurn.innerHTML='';for(let s=0;s<NS;s++){const o=document.createElement('option');o.value=s;o.textContent='Turn '+(s+1);tdTurn.appendChild(o);}
-  // wiring (onX = overwrite, safe to repeat)
-  lapSel.onchange=e=>{cur=+e.target.value;cursor=0;redraw();tdReset();oppRender();};
-  ghostSel.onchange=e=>{ghost=e.target.value;redraw();};
-  $('scrub').oninput=e=>{cursor=+e.target.value;redraw();};
-  document.querySelectorAll('.spd').forEach(b=>b.onclick=()=>{speedMul=+b.dataset.s;document.querySelectorAll('.spd').forEach(x=>x.classList.remove('on'));b.classList.add('on');});
-  $('speed').onclick=e=>{const cv=e.currentTarget,r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*cv.width/r.width,pad=24;cursor=Math.max(0,Math.min(NG-1,Math.round((x-pad)/(cv.width-pad-6)*(NG-1))));redraw();};
-  $('map').onclick=e=>{const cv=e.currentTarget,r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*cv.width/r.width,y=(e.clientY-r.top)*cv.height/r.height;let bsel=null,bd=1e9;mapBadges.forEach(b=>{const d=(b.x-x)**2+(b.y-y)**2;if(d<bd){bd=d;bsel=b;}});if(bsel&&bd<400){tdTurnIdx=bsel.i;$('tdTurn').value=bsel.i;tdReset();drawMap();drawSpeed();$('tdPanel').scrollIntoView({behavior:'smooth',block:'start'});}};
-  $('playBtn').onclick=function(){playing=!playing;this.textContent=playing?'❚❚ Pause':'▶ Play';this.classList.toggle('on',playing);if(playing){last=0;acc=0;raf=requestAnimationFrame(loop);}else if(raf)cancelAnimationFrame(raf);};
-  tdTurn.onchange=e=>{tdTurnIdx=+e.target.value;tdReset();drawMap();drawSpeed();};
-  $('tdPrev').onclick=()=>{tdTurnIdx=(tdTurnIdx-1+NS)%NS;$('tdTurn').value=tdTurnIdx;tdReset();drawMap();drawSpeed();};
-  $('tdNext').onclick=()=>{tdTurnIdx=(tdTurnIdx+1)%NS;$('tdTurn').value=tdTurnIdx;tdReset();drawMap();drawSpeed();};
-  $('tdPlay').onclick=function(){tdPlaying=!tdPlaying;this.textContent=tdPlaying?'❚❚ Pause':'▶ Loop turn';this.classList.toggle('on',tdPlaying);if(tdPlaying){tdLast=0;const[i0]=tdRange();if(tdCursor<i0)tdCursor=i0;tdRaf=requestAnimationFrame(tdLoop);}else if(tdRaf)cancelAnimationFrame(tdRaf);};
-  $('footnote').innerHTML='All parsing & analysis run locally in your browser — nothing is uploaded. Speed & g-forces are GPS-derived at 10 Hz (lightly smoothed); lap & sector times are exact from the logger. Turns & brake/apex/throttle points are auto-detected. Validated on Solo-type GPS loggers; other AiM devices may need tuning.';
-  buildTables();
-  // pick worst turn of current lap
-  tdTurnIdx=(function(){let w=-1e9,wi=0;for(let s=0;s<NS;s++){const d=best.seg[s]-bestLapInSeg(s).seg[s];if(d>w){w=d;wi=s;}}return wi;})();
-  $('tdTurn').value=tdTurnIdx;
-  playing=false;$('playBtn').textContent='▶ Play';$('playBtn').classList.remove('on');if(raf)cancelAnimationFrame(raf);
-  tdPlaying=false;$('tdPlay').textContent='▶ Loop turn';$('tdPlay').classList.remove('on');if(tdRaf)cancelAnimationFrame(tdRaf);
-  $('dropPanel').style.display='none';$('app').style.display='';
-  tdReset();oppRender();setLap(best.id);
-}
-function loop(ts){if(!playing)return;if(!last)last=ts;let dt=(ts-last)/1000;last=ts;const L=byId(cur),stepTime=L.t/NG;acc+=dt*speedMul;while(acc>=stepTime){acc-=stepTime;cursor++;if(cursor>=NG)cursor=0;}redraw();raf=requestAnimationFrame(loop);}
-
-// expose for headless test
-window.__loadForTest=(D,S)=>{DATA=D;STATS=S;initDashboard();};
-</script>
 </body>
 </html>
