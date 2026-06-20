@@ -4,10 +4,11 @@
 const NG=600;
 
 // ---- byte helpers ----
-function findAll(buf,pat){const res=[],n=buf.length,m=pat.length,p0=pat[0];
-  for(let i=0;i+m<=n;i++){if(buf[i]===p0){let ok=true;for(let j=1;j<m;j++){if(buf[i+j]!==pat[j]){ok=false;break;}}if(ok)res.push(i);}}return res;}
-function findFirst(buf,pat){const n=buf.length,m=pat.length,p0=pat[0];
-  for(let i=0;i+m<=n;i++){if(buf[i]===p0){let ok=true;for(let j=1;j<m;j++){if(buf[i+j]!==pat[j]){ok=false;break;}}if(ok)return i;}}return -1;}
+// null entries in pat act as wildcards (match any byte) — lets one pattern span device variants.
+function findAll(buf,pat){const res=[],n=buf.length,m=pat.length;
+  for(let i=0;i+m<=n;i++){let ok=true;for(let j=0;j<m;j++){if(pat[j]!==null&&buf[i+j]!==pat[j]){ok=false;break;}}if(ok)res.push(i);}return res;}
+function findFirst(buf,pat){const n=buf.length,m=pat.length;
+  for(let i=0;i+m<=n;i++){let ok=true;for(let j=0;j<m;j++){if(pat[j]!==null&&buf[i+j]!==pat[j]){ok=false;break;}}if(ok)return i;}return -1;}
 function bytesOf(s){return Array.from(s).map(c=>c.charCodeAt(0));}
 
 // ---- math helpers ----
@@ -34,7 +35,8 @@ function interp(xq,xp,fp){ // xp ascending
 // ---- parse one file ----
 function parseXRK(u8){
   const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
-  const GPSPAT=bytesOf("<hGPS").concat([0x00,0x38,0x00,0x00,0x00,0x01,0x3e]);
+  // Byte after "<hGPS" varies by device (0x00 on Solo, 0x31 on MX-series) — wildcard it.
+  const GPSPAT=bytesOf("<hGPS").concat([null,0x38,0x00,0x00,0x00,0x01,0x3e]);
   const gpsHits=findAll(u8,GPSPAT);
   const gps=new Array(gpsHits.length);
   for(let k=0;k<gpsHits.length;k++){const b=gpsHits[k]+GPSPAT.length;
@@ -108,7 +110,7 @@ function buildDataset(parsedList, driverMap){
       const eE=idx.map(i=>E[i]),eN=idx.map(i=>N[i]),ev=idx.map(i=>v[i]),
             elg=idx.map(i=>longg[i]),etg=idx.map(i=>latg[i]),emc=idx.map(i=>mc[i]);
       const cd=[0];for(let i=1;i<eE.length;i++)cd.push(cd[i-1]+Math.hypot(eE[i]-eE[i-1],eN[i]-eN[i-1]));
-      const L=cd[cd.length-1];const geo_ok=L>2000&&L<4500;
+      const L=cd[cd.length-1];const geo_ok=L>200&&L<30000;// covers karting/short circuits up to Nordschleife
       const t=emc.map(m=>(m-emc[0])/1000);
       const frac=cd.map(d=>L>0?d/L:0);
       const grid=[];for(let i=0;i<NG;i++)grid.push(i/(NG-1));
@@ -121,7 +123,7 @@ function buildDataset(parsedList, driverMap){
   // classify green per code
   const byCode={};allLaps.forEach(l=>{(byCode[l.code]=byCode[l.code]||[]).push(l);});
   for(const c in byCode){const med=median(byCode[c].map(l=>l.dur));
-    byCode[c].forEach(l=>l.green=l.dur<med+18&&l.dur<140&&l.geo_ok);}
+    byCode[c].forEach(l=>l.green=l.dur<med+18&&l.dur<600&&l.geo_ok);}
   const green=allLaps.filter(l=>l.green).sort((a,b)=>a.dur-b.dur);
   if(!green.length) throw new Error("No clean (green) laps found.");
   const ref=green[0];

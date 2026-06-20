@@ -73,7 +73,7 @@ You might expect this to need a database of every circuit. It mostly doesn't: la
 
 This is an early, honest prototype:
 
-- The decoder is **validated on a Solo-type GPS logger.** Other AiM devices (MX-series, Solo 2, EVO) may use different channel/GPS layouts and will need a sample file each to tune. Contributions of sample files from other loggers are the most useful thing you can add.
+- The decoder is **validated against real data from AiM Solo and MX-series loggers** (multiple tracks, cars, and series). Solo 2 and EVO haven't been tested yet but share the same record structure and should work. Contributions of sample files from other loggers are the most useful thing you can add.
 - Speed and g-forces are **GPS-derived at 10 Hz** (lightly smoothed). Lap and sector times are exact; the derived channels are a strong guide, not a substitute for a high-rate accelerometer/wheel-speed feed.
 - Turn boundaries and brake/apex/throttle points are auto-detected heuristics — directionally right, not millimetre-perfect.
 - `.xrz` decompression uses the browser's `DecompressionStream` and is best-effort.
