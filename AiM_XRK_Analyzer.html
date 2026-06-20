@@ -184,9 +184,12 @@ function parseXRK(u8){
             X:dv.getInt32(b+16,true)/100,Y:dv.getInt32(b+20,true)/100,Z:dv.getInt32(b+24,true)/100};}
   const LAPPAT=bytesOf("<hLAP");
   const lapHits=findAll(u8,LAPPAT);
-  const laps=[];
+  // MX-series writes one <hLAP per sector; the lap-number field (base+2) only advances at the
+  // start/finish crossing. Keep one record per lap-number so each "lap" is a full circuit, not a sector.
+  const laps=[];let prevNum=null;
   for(const p of lapHits){const base=p+12;
-    laps.push({num:dv.getUint16(base+2,true),dur:dv.getUint32(base+4,true)/1000,start:dv.getUint32(base+16,true)});}
+    const num=dv.getUint16(base+2,true);
+    if(num!==prevNum){laps.push({num,dur:dv.getUint32(base+4,true)/1000,start:dv.getUint32(base+16,true)});prevNum=num;}}
   function meta(tag){const pat=bytesOf("<h"+tag).concat([0x00]);const i=findFirst(u8,pat);if(i<0)return null;
     const lenOff=i+pat.length;const len=dv.getUint32(lenOff,true);const start=lenOff+6;
     let s='';for(let j=0;j<len;j++){const c=u8[start+j];if(c===0)break;s+=String.fromCharCode(c);}return s;}
@@ -250,7 +253,9 @@ function buildDataset(parsedList, driverMap){
       const eE=idx.map(i=>E[i]),eN=idx.map(i=>N[i]),ev=idx.map(i=>v[i]),
             elg=idx.map(i=>longg[i]),etg=idx.map(i=>latg[i]),emc=idx.map(i=>mc[i]);
       const cd=[0];for(let i=1;i<eE.length;i++)cd.push(cd[i-1]+Math.hypot(eE[i]-eE[i-1],eN[i]-eN[i-1]));
-      const L=cd[cd.length-1];const geo_ok=L>200&&L<30000;// covers karting/short circuits up to Nordschleife
+      const L=cd[cd.length-1];
+      const closeGap=Math.hypot(eE[eE.length-1]-eE[0],eN[eN.length-1]-eN[0]);
+      const geo_ok=L>200&&L<30000&&closeGap<Math.max(40,0.07*L);// a real lap returns to start/finish
       const t=emc.map(m=>(m-emc[0])/1000);
       const frac=cd.map(d=>L>0?d/L:0);
       const grid=[];for(let i=0;i<NG;i++)grid.push(i/(NG-1));
@@ -262,8 +267,9 @@ function buildDataset(parsedList, driverMap){
   if(!allLaps.length) throw new Error("No valid laps with telemetry found.");
   // classify green per code
   const byCode={};allLaps.forEach(l=>{(byCode[l.code]=byCode[l.code]||[]).push(l);});
-  for(const c in byCode){const med=median(byCode[c].map(l=>l.dur));
-    byCode[c].forEach(l=>l.green=l.dur<med+18&&l.dur<600&&l.geo_ok);}
+  for(const c in byCode){const closing=byCode[c].filter(l=>l.geo_ok).map(l=>l.dur);
+    const med=closing.length?median(closing):1e9;
+    byCode[c].forEach(l=>l.green=l.geo_ok&&l.dur<med+18&&l.dur<600);}
   const green=allLaps.filter(l=>l.green).sort((a,b)=>a.dur-b.dur);
   if(!green.length) throw new Error("No clean (green) laps found.");
   const ref=green[0];
