@@ -116,6 +116,7 @@ function buildDataset(parsedList, driverMap){
       const L=cd[cd.length-1];
       const closeGap=Math.hypot(eE[eE.length-1]-eE[0],eN[eN.length-1]-eN[0]);
       const geo_ok=L>200&&L<30000&&closeGap<Math.max(40,0.07*L);// a real lap returns to start/finish
+      if(!geo_ok)continue;// drop incomplete laps (out/in-laps, sector fragments) so only full laps count
       const t=emc.map(m=>(m-emc[0])/1000);
       const frac=cd.map(d=>L>0?d/L:0);
       const grid=[];for(let i=0;i<NG;i++)grid.push(i/(NG-1));
