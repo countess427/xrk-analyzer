@@ -94,6 +94,13 @@ function buildDataset(parsedList, driverMap){
   for(const {code,parsed} of parsedList){
     const G=parsed.gps;if(!G.length||!parsed.laps.length)continue;
     const mc=G.map(s=>s.mc);const EN=G.map(s=>enu(s.X,s.Y,s.Z));
+    // Lap-record cumulative-time field (start) is a real master-clock timeline on some devices but
+    // holds per-lap durations on others (so slice windows land outside the GPS clock). Validate it;
+    // if it isn't a monotonic timeline within the GPS clock, derive crossings by summing lap durations.
+    {const Lp=parsed.laps,mcA=mc[0],mcZ=mc[mc.length-1];
+     let valid=Lp.length>0;for(let i=1;i<Lp.length;i++)if(Lp[i].start<=Lp[i-1].start){valid=false;break;}
+     if(valid&&(Lp[Lp.length-1].start>mcZ+5000||Lp[0].start<mcA-5000))valid=false;
+     if(!valid){let acc=mcA;for(const l of Lp){acc+=Math.round(l.dur*1000);l.start=acc;}}}
     const E=EN.map(p=>p[0]),N=EN.map(p=>p[1]);
     let dt=[];for(let i=0;i<mc.length-1;i++)dt.push((mc[i+1]-mc[i])/1000);dt.push(dt[dt.length-1]||0.1);
     dt=dt.map(x=>x<=0?0.1:x);
